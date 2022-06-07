@@ -1,9 +1,11 @@
 import argparse
 import os
+from statistics import mode
 import sys
 import shutil
 import time
 import random
+import platform
 import numpy as np
 import torch
 import torch.nn as nn
@@ -73,6 +75,7 @@ def main():
     # define model
     model = ReconNet(in_channels=args.num_views, out_channels=args.output_channel)
     model = torch.nn.DataParallel(model).cuda()
+    #model = mode.cuda()
 
     # define loss function
     criterion = nn.MSELoss(size_average=True, reduce=True).cuda()
@@ -118,11 +121,14 @@ def main():
                         transforms.ToTensor(),
                         normalize,
                         ]))
+    num_workers = 0
+    if(platform.system() == 'Linux'):
+        num_workers = 4
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=1, 
         shuffle=False,
-        num_workers=4, 
+        num_workers=num_workers, 
         pin_memory=True)
 
     # load model 
