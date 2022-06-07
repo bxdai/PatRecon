@@ -18,9 +18,12 @@ import torchvision.datasets as datasets
 from torch.utils.data import Dataset, DataLoader
 from torch.autograd import Variable
 from net import ReconNet
-from sklearn.metrics import mean_absolute_error
+from skimage.metrics import normalized_root_mse as compare_nrmse
+from sklearn.metrics import mean_absolute_error 
 from sklearn.metrics import mean_squared_error
-from skimage.measure import compare_mse, compare_nrmse, compare_psnr, compare_ssim
+from skimage.metrics import structural_similarity as compare_ssim
+from skimage.metrics import peak_signal_noise_ratio as compare_psnr
+#from skimage.measure import compare_mse, compare_nrmse, compare_psnr, compare_ssim
 from skimage import io
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -163,7 +166,7 @@ def test(val_loader, model, criterion, mode):
         output = model(input_var)
         loss = criterion(output, target_var)
         losses.update(loss.data.item(), input.size(0))
-        pred[i, :, :, :] = output.data.float()
+        pred[i, :, :, :] = output.cpu().data.float()
 
         print('{0}: [{1}/{2}]\t'
           'Val Loss {loss.val:.5f} ({loss.avg:.5f})\t'.format(
@@ -204,11 +207,11 @@ def getErrorMetrics(im_pred, im_gt, mask=None):
     # sanity check
     assert(im_pred.flatten().shape==im_gt.flatten().shape)
     # RMSE
-    rmse_pred = compare_nrmse(im_true=im_gt, im_test=im_pred)
+    rmse_pred = compare_nrmse(image_true=im_gt, image_test=im_pred)
     # PSNR
-    psnr_pred = compare_psnr(im_true=im_gt, im_test=im_pred)
+    psnr_pred = compare_psnr(image_true=im_gt, image_test=im_pred)
     # SSIM
-    ssim_pred = compare_ssim(X=im_gt, Y=im_pred)
+    ssim_pred = compare_ssim(im_gt, im_pred)
     # MSE
     mse_pred = mean_squared_error(y_true=im_gt.flatten(), y_pred=im_pred.flatten())
     # MAE
